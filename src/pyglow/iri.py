@@ -3,7 +3,13 @@ import os
 
 from iri12py import iri_sub as iri12
 from iri16py import iri_sub as iri16
-from iri16py import read_ig_rz, readapf107
+from iri20py import iri_sub as iri20
+from iri16py import read_ig_rz as read_ig_rz_16
+from iri16py import readapf107 as readapf107_16 
+
+from iri20py import read_ig_rz as read_ig_rz_20
+from iri20py import readapf107 as readapf107_20 
+
 from .constants import DIR_FILE, nan
 
 IONS = ['O+', 'H+', 'HE+', 'O2+', 'NO+']
@@ -12,6 +18,8 @@ IONS = ['O+', 'H+', 'HE+', 'O2+', 'NO+']
 # of the ionosphere global index (ig_rz.dat) and Ap/F10.7 index (apf107.dat)
 # files. IRI 2016 initialization is required only once per session.
 __INIT_IRI16 = False
+__INIT_IRI20 = False
+
 
 
 class IRI(object):
@@ -42,17 +50,31 @@ class IRI(object):
         initialized and `False` otherwise.
         """
         if not globals()['__INIT_IRI16']:
-            read_ig_rz()
-            readapf107()
+            read_ig_rz_16()
+            readapf107_16()
             globals()['__INIT_IRI16'] = True
             return True
         else:
             return False
+    def init_iri20():
+        """
+        If required (depending on the global variable *__INIT_IRI20*),
+        initialize IRI 2020. Return `True` if the model was
+        initialized and `False` otherwise.
+        """
+        if not globals()['__INIT_IRI20']:
+            read_ig_rz_20()
+            readapf107_20()
+            globals()['__INIT_IRI20'] = True
+            return True
+        else:
+            return False
+
 
     def run(
         self,
         location_time,
-        version=2016,
+        version=2020,
         NmF2=None,
         hmF2=None,
         compute_Ne=True,
@@ -62,7 +84,10 @@ class IRI(object):
         f107a=None,
         f1_layer=True,
         bil2000=False,
+        top="NeQuick",
+        plas="Ozhogin"
     ):
+        
         """
         Run IRI model at point time/location and update the object state
         accordingly. If *NmF2* (in [cm^{-3}}]) or *hmF2* (in [km]) are
@@ -85,12 +110,19 @@ class IRI(object):
         :param f107a: User specified F107A
         :param f1_layer: If True (default) include F1-layer (JF switches 19,20 = True)
         :param bil2000: If True, use Bil-2000 model for bottomside (JF switch 4). Default IRI is False
+        :param top: Model for topside ionosphere (NeQuick (default), 2001, 2001cor, 2001co2).
+        :param plas: Model for plasmasphere extension (Ozhogin, Gallagher)
         """
 
-        if version == 2016:
+        if version == 2020:
+            iri_data_stub = 'iri20_data/'
+            iri = iri20
+            init_iri = IRI.init_iri20
+        elif version == 2016:
             iri_data_stub = 'iri16_data/'
             iri = iri16
             init_iri = IRI.init_iri16
+        
         elif version == 2012:
             iri_data_stub = 'iri12_data/'
             iri = iri12
@@ -113,15 +145,36 @@ class IRI(object):
         jf[20] = 0  # 21 ion drift not computed
         jf[22] = 0  # 23 Te_topside (TBT-2011)
         jf[27] = 0  # 28 spreadF prob not computed
-        jf[28] = 0  # 29 (29,30) => NeQuick
-        jf[29] = 0  # 30
+        if top=="NeQuick":
+            jf[28] = 0  # 29 (29,30) => NeQuick
+            jf[29] = 0  # 30
+        if top=="2001":
+            jf[28] = 1  # 29 (29,30) => 2001
+            jf[29] = 1 
+        if top=="2001cor":
+            jf[28] = 0  # 29 (29,30) => 2001cor
+            jf[29] = 1 
+        if top=="2001cor2":
+            jf[28] = 1  # 29 (29,30) => 2001cor2
+            jf[29] = 0 
+            
+        # print(jf[28],jf[29])
         # (Brian found a case that stalled IRI when on):
         jf[32] = 0  # 33 Auroral boundary model off
         jf[34] = 0  # 35 no foE storm update
         # Not standard, but outputs same as values as standard so not an issue
         jf[21] = 0  # 22 ion densities in m^-3 (not %)
         jf[33] = 0  # 34 turn messages off
-
+        jf[38] = 0
+        jf[39] = 0
+        jf[46] = 0
+        if plas=="Ozhogin":
+            jf[48] = 1
+        if plas=="Gallagher":
+            jf[48] = 0
+        
+# jf(4,5,6,21,23,28,29,30,33,35,39,40,47)=.false.
+# jf(4,5,6,21,23,28,29,30,33,35,39,40,47)=.false.
         if not compute_Ne:
             jf[0] = 0
 
@@ -188,7 +241,6 @@ class IRI(object):
 
         # Change directories to data path:
         os.chdir(iri_data_path)
-
         # Initalize IRI:
         init_iri()
 

@@ -19,6 +19,7 @@ It includes the following upper atmospheric models:
   * IGRF 12
   * IRI 2012
   * IRI 2016
+  * IRI 2020
   * MSIS 2000
 
 pyglow also provides access to the the following geophysical indices:

@@ -117,7 +117,11 @@ class Point(object):
         self.v = self.hwm.v
         self.hwm_version = self.hwm.hwm_version
         self.hwm_dwm = self.hwm.hwm_dwm
+<<<<<<< Updated upstream
 
+=======
+        
+>>>>>>> Stashed changes
         # For igrf:
         self.igrf = IGRF()
         self.Bx = self.igrf.Bx
@@ -160,7 +164,7 @@ class Point(object):
 
     def run_iri(
         self,
-        version=2016,
+        version=2020,
         NmF2=None,
         hmF2=None,
         compute_Ne=True,
@@ -168,11 +172,13 @@ class Point(object):
         compute_Ni=True,
         f1_layer=True,
         bil2000=False,
+        top    ="NeQuick",
+        plas   ="Ozhogin"
     ):
         """
         Executes IRI and assigns results to instance.
 
-        :param version: Version of IRI to run
+        :param version: Version of IRI to (2012,2016,2020 (default))
         :param NmF2: User-specified NmF2 [cm^-3]
         :param hmF2: User-specified hmF2 [km]
         :param compute_Ne: Switch to compute Ne
@@ -180,6 +186,8 @@ class Point(object):
         :param compute_Ni: Switch to compute Ni
         :param f1_layer: If True (default) include F1-layer (JF switches 19,20 = True)
         :param bil2000: If True, use Bil-2000 model for bottomside (JF switch 4). Default IRI is False
+        :param top: Model for topside ionosphere (NeQuick (default), 2001, 2001cor, 2001co2).
+        :param plas: Model for plasmasphere extension (Ozhogin (default), Gallagher)
         """
 
         # Check if user supplies indices:
@@ -207,6 +215,8 @@ class Point(object):
             f107a=f107a,
             f1_layer=f1_layer,
             bil2000=bil2000,
+            top=top,
+            plas=plas
         )
 
         # Assign output of IRI:

@@ -185,7 +185,11 @@ def generate_kpap():
     ae = {}
 
     kpap = pd.read_csv(PYGLOW_PATH +'/kpap/Kp_ap_Ap_SN_F107_since_1932.txt',
+<<<<<<< Updated upstream
                        delim_whitespace=True, comment='#', header=None)
+=======
+                       sep='\s+', comment='#', header=None)
+>>>>>>> Stashed changes
     for i in range(len(kpap)):
         vals = kpap.loc[i]
         year = int(vals[0])

@@ -2,8 +2,8 @@
 
 import glob
 import os
-from io import open  # For Python 2 compatibility
-from numpy.distutils.core import setup, Extension
+# from setuptools import setup
+from skbuild import setup  # This line replaces numpy.distutils.core
 
 DL_MODELS = 'src/pyglow/models/dl_models'
 
@@ -23,34 +23,36 @@ def reencode(dosfile, target='utf-8'):
 
     return
 
+# Prepare CMake extensions
+cmake_args = []
 
 # IGRF 11:
-igrf11 = Extension(
-    name='igrf11py',
-    sources=[os.path.join(DL_MODELS, 'igrf11', fname) for fname in [
+igrf11 = {
+    'name': 'igrf11py',
+    'sources': [os.path.join(DL_MODELS, 'igrf11', fname) for fname in [
         'igrf11_modified.f',
         'sig_file_patched.pyf',
-    ]],
-)
+    ]]
+}
 
 # IGRF 12:
-igrf12 = Extension(
-    name='igrf12py',
-    sources=[os.path.join(DL_MODELS, 'igrf12', fname) for fname in [
+igrf12 = {
+    'name': 'igrf12py',
+    'sources': [os.path.join(DL_MODELS, 'igrf12', fname) for fname in [
         'igrf12_modified.f',
         'sig_file_patched.pyf',
-    ]],
-)
+    ]]
+}
 
 # HWM 93:
-hwm93 = Extension(
-    name='hwm93py',
-    sources=[os.path.join(DL_MODELS, 'hwm93', fname) for fname in [
+hwm93 = {
+    'name': 'hwm93py',
+    'sources': [os.path.join(DL_MODELS, 'hwm93', fname) for fname in [
         'hwm93_modified.f',
         'sig_file_patched.pyf',
     ]],
-    extra_f77_compile_args=['-std=legacy'],
-)
+    'extra_f77_compile_args': ['-std=legacy']
+}
 
 # Rencode HWM07 sources:
 hwm07_sources = [os.path.join(DL_MODELS, 'hwm07', fname) for fname in [
@@ -64,26 +66,25 @@ for source in hwm07_sources:
 os.system('make -Cpyglow/models/dl_models/hwm07 sig')
 
 # HWM07:
-hwm07 = Extension(
-    name='hwm07py',
-    sources=hwm07_sources + [os.path.join(DL_MODELS, 'hwm07', 'sig_file.pyf')],
-    # f2py_options=['only: hwmqt :'],  # where is the right place to put this?
-)
+hwm07 = {
+    'name': 'hwm07py',
+    'sources': hwm07_sources + [os.path.join(DL_MODELS, 'hwm07', 'sig_file.pyf')],
+}
 
 # HWM14:
-hwm14 = Extension(
-    name='hwm14py',
-    sources=[os.path.join(DL_MODELS, 'hwm14', fname) for fname in [
+hwm14 = {
+    'name': 'hwm14py',
+    'sources': [os.path.join(DL_MODELS, 'hwm14', fname) for fname in [
         'hwm14.f90',
         'sig_file.pyf',
     ]],
-    extra_f77_compile_args=['-std=legacy'],
-)
+    'extra_f77_compile_args': ['-std=legacy']
+}
 
 # IRI 12:
-iri12 = Extension(
-    name='iri12py',
-    sources=[os.path.join(DL_MODELS, 'iri12', fname) for fname in [
+iri12 = {
+    'name': 'iri12py',
+    'sources': [os.path.join(DL_MODELS, 'iri12', fname) for fname in [
         'cira.for',
         'igrf.for',
         'iridreg_modified.for',
@@ -93,20 +94,20 @@ iri12 = Extension(
         'iriflip.for',
         'sig_file_patched.pyf',
     ]],
-    extra_f77_compile_args=[
+    'extra_f77_compile_args': [
         '-std=legacy',
         '-w',
         '-O2',
         '-fbacktrace',
         '-fno-automatic',
         '-fPIC',
-    ],
-)
+    ]
+}
 
 # IRI16:
-iri16 = Extension(
-    name='iri16py',
-    sources=[os.path.join(DL_MODELS, 'iri16', fname) for fname in [
+iri16 = {
+    'name': 'iri16py',
+    'sources': [os.path.join(DL_MODELS, 'iri16', fname) for fname in [
         'cira.for',
         'igrf.for',
         'iridreg_modified.for',
@@ -117,27 +118,27 @@ iri16 = Extension(
         'cosd_sind.for',
         'sig_file_patched.pyf',
     ]],
-    extra_f77_compile_args=[
+    'extra_f77_compile_args': [
         '-std=legacy',
         '-w',
         '-O2',
         '-fbacktrace',
         '-fno-automatic',
         '-fPIC',
-    ],
-)
+    ]
+}
 
 # MSIS00:
-msis00 = Extension(
-    name='msis00py',
-    sources=[os.path.join(DL_MODELS, 'msis', fname) for fname in [
+msis00 = {
+    'name': 'msis00py',
+    'sources': [os.path.join(DL_MODELS, 'msis', fname) for fname in [
         'nrlmsise00_sub_patched.for',
         'sig_file_patched.pyf'
     ]],
-    extra_f77_compile_args=['-std=legacy'],
-)
+    'extra_f77_compile_args': ['-std=legacy']
+}
 
-# Distutils setup:
+# Setup with skbuild
 setup(
     name='pyglow',
     url='https://github.com/timduly4/pyglow',
@@ -145,6 +146,7 @@ setup(
     author_email='timduly4@gmail.com',
     packages=['pyglow'],
     package_dir={'pyglow': 'src/pyglow'},
+<<<<<<< Updated upstream
     ext_modules=[
         igrf11,
         igrf12,
@@ -155,6 +157,10 @@ setup(
         iri16,
         msis00,
     ],
+=======
+    cmake_args=cmake_args,
+    cmake_install_dir='src/pyglow',
+>>>>>>> Stashed changes
     data_files=[
         ('pyglow_trash', ['src/pyglow/models/Makefile']),
         ('pyglow_trash', ['src/pyglow/models/get_models.py']),
@@ -324,3 +330,4 @@ setup(
 )
 
 print("... All done!")
+
