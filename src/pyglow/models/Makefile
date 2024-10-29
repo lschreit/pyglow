@@ -12,6 +12,8 @@ all: source
 
 	cd ./dl_models/iri16/; make compile; rsync iri16py*so iri16py.so
 
+	cd ./dl_models/iri20/; make compile; rsync iri20py*so iri20py.so
+
 	cd ./dl_models/hwm07/; make compile; rsync hwm07py*so hwm07py.so
 
 	cd ./dl_models/hwm14/; make compile; rsync hwm14py*so hwm14py.so
@@ -38,6 +40,9 @@ source: clean download
 	cp ./f2py/iri16/* ./dl_models/iri16/
 	cd ./dl_models/iri16/; make source;
 
+	cp ./f2py/iri20/* ./dl_models/iri20/
+	cd ./dl_models/iri20/; make source;
+
 	cp ./f2py/hwm07/* ./dl_models/hwm07/
 	cd ./dl_models/hwm07/; make source;
 
@@ -54,6 +59,7 @@ clean:
 	rm -rf ./dl_models/igrf12/*
 	rm -rf ./dl_models/iri12/*
 	rm -rf ./dl_models/iri16/*
+	rm -rf ./dl_models/iri20/*
 	rm -rf ./dl_models/msis/*
 	touch ./dl_models/hwm07/dummy.txt
 	touch ./dl_models/hwm93/dummy.txt

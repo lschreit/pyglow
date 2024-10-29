@@ -3,6 +3,7 @@
 mtime_table.pkl
 geophysical_indices.npy
 build/
+src/pyglow/models/dl_models/iri20/
 src/pyglow/models/dl_models/iri16/
 src/pyglow/models/dl_models/iri12/
 src/pyglow/models/dl_models/hwm93/

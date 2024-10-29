@@ -325,3 +325,147 @@ for indice_url in INDICE_URLS:
         output = open(fn, 'wb')
         output.write(model_file.read())
         output.close()
+
+
+model_folder = 'iri20'
+model_urls = [
+    'http://irimodel.org/IRI-2020/00_iri.zip'
+]
+for model_url in model_urls:
+
+    is_downloaded = False
+
+    # local file length:
+    local_length = 0
+    # remote file length:
+    remote_length = 0
+
+    zip_file = model_url.split('/')[-1]
+    # data file name:
+    fn = "./dl_models/{}/{}".format(model_folder, zip_file)
+
+    # avoid repeating to download:
+    if os.path.isfile(fn):
+        local_length = os.stat(fn).st_size
+    
+    # Download the tar or zip file:
+    print(
+        "Downloading files for {} at {}".format(
+            zip_file,
+            model_url,
+        )
+    )
+
+    # Open url for downloading zip file:
+    model_file = urllib.request.urlopen(model_url)
+
+    # avoid repeating to download:
+    remote_length = int(model_file.getheader('Content-Length'))
+    if local_length == remote_length:
+        print("{} was already downloaded.".format(fn))
+        is_downloaded = True
+
+    if not is_downloaded:
+        # Download zip file:
+        output = open(fn, 'wb')
+        output.write(model_file.read())
+        output.close()
+
+    # Untar:
+    cmd = 'unzip -j ./dl_models/{model_folder}/{zip_file} -d ./dl_models/{model_folder}/'.format(
+            model_folder=model_folder,
+            zip_file=zip_file,
+          )
+    print(cmd)
+    os.system(cmd)
+#    cmd = 'mv ./dl_models/{model_folder}/IRI-2020/* ./dl_models/{model_folder}/'.format(model_folder=model_folder)
+#    os.system(cmd)
+#    print(btunaitubn)
+model_folder = 'iri20'
+model_urls = [
+    'http://irimodel.org/COMMON_FILES/00_ccir-ursi.tar',
+]
+for model_url in model_urls:
+
+    is_downloaded = False
+
+    # local file length:
+    local_length = 0
+    # remote file length:
+    remote_length = 0
+
+    tar_file = model_url.split('/')[-1]
+    # data file name:
+    fn = "./dl_models/{}/{}".format(model_folder, tar_file)
+
+    # avoid repeating to download:
+    if os.path.isfile(fn):
+        local_length = os.stat(fn).st_size
+    
+    # Download the tar or zip file:
+    print(
+        "Downloading files for {} at {}".format(
+            tar_file,
+            model_url,
+        )
+    )
+
+    # Open url for downloading tar file:
+    model_file = urllib.request.urlopen(model_url)
+
+    # avoid repeating to download:
+    remote_length = int(model_file.getheader('Content-Length'))
+    if local_length == remote_length:
+        print("{} was already downloaded.".format(fn))
+        is_downloaded = True
+
+    if not is_downloaded:
+        # Download tar file:
+        output = open(fn, 'wb')
+        output.write(model_file.read())
+        output.close()
+
+    # Untar:
+    cmd = 'tar -xvf ./dl_models/{model_folder}/{tar_file} '\
+          '-C ./dl_models/{model_folder}/'.format(
+            model_folder=model_folder,
+            tar_file=tar_file,
+          )
+    print(cmd)
+    os.system(cmd)
+
+# Download indice files:
+for indice_url in INDICE_URLS:
+
+    is_downloaded = False
+
+    # local file length:
+    local_length = 0
+    # remote file length:
+    remote_length = 0
+
+    # Local filename:
+    dat_file = indice_url.split('/')[-1]
+
+    # Download filename:
+    fn = "./dl_models/{}/{}".format(model_folder, dat_file)
+        
+    # avoid repeating to download:
+    if os.path.isfile(fn):
+        local_length = os.stat(fn).st_size
+
+    # Make URL request:
+    model_file = urllib.request.urlopen(indice_url)
+
+    # avoid repeating to download:
+    remote_length = int(model_file.getheader('Content-Length'))
+    if local_length == remote_length:
+        print("{} was already downloaded.".format(fn))
+        is_downloaded = True
+    
+    if not is_downloaded:
+        # Write file to disk:
+        print("Downloading: {} to {}".format(indice_url, fn))
+        output = open(fn, 'wb')
+        output.write(model_file.read())
+        output.close()
