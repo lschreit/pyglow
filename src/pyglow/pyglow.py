@@ -117,11 +117,7 @@ class Point(object):
         self.v = self.hwm.v
         self.hwm_version = self.hwm.hwm_version
         self.hwm_dwm = self.hwm.hwm_dwm
-<<<<<<< Updated upstream
-
-=======
         
->>>>>>> Stashed changes
         # For igrf:
         self.igrf = IGRF()
         self.Bx = self.igrf.Bx
