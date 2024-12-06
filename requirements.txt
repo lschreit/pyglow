@@ -3,4 +3,4 @@ numpy
 python-dateutil
 pytest
 coverage
-skbuild
+scikit-build
