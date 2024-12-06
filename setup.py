@@ -3,6 +3,9 @@
 import glob
 import os
 from skbuild import setup  # This line replaces numpy.distutils.core
+from setuptools import find_namespace_packages
+packages=find_namespace_packages(where='src'),
+package_dir={"": "src"}
 
 DL_MODELS = 'src/pyglow/models/dl_models'
 
@@ -141,9 +144,7 @@ msis00 = {
 setup(
     name='pyglow',
     url='https://github.com/timduly4/pyglow',
-    author='Timothy M. Duly',
-    author_email='timduly4@gmail.com',
-    packages=['pyglow'],
+    packages=find_namespace_packages(where='src'),
     package_dir={'pyglow': 'src/pyglow'},
     cmake_args=cmake_args,
     cmake_install_dir='src/pyglow',
