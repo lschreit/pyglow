@@ -1,0 +1,7 @@
+# The fortran modules provided by this target.
+provides
+ alf.mod
+ dwm.mod
+ gd2qdc.mod
+ hwm.mod
+ qwm.mod

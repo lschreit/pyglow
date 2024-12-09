@@ -1,0 +1,15 @@
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/igrf11py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/igrf12py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/hwm93py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/hwm07py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/hwm14py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/iri12py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/iri16py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/iri20py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/msis00py.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/edit_cache.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/rebuild_cache.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/list_install_components.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/install.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/install/local.dir
+/home/schreit/pyglow/_skbuild/linux-x86_64-3.10/cmake-build/CMakeFiles/install/strip.dir

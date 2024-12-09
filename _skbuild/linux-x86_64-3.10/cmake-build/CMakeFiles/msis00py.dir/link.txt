@@ -1,0 +1,1 @@
+/usr/bin/gfortran -fPIC -O3 -DNDEBUG -O3 -shared  -o msis00py.so CMakeFiles/msis00py.dir/src/pyglow/models/dl_models/msis/nrlmsise00_sub_patched.for.o 

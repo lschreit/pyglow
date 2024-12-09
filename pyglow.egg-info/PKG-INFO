@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: pyglow
+Version: 1.0.0
+Home-page: https://github.com/timduly4/pyglow
+Author: Timothy M. Duly
+Author-email: timduly4@gmail.com
+Requires-Python: >=3.9
+Requires-Dist: numpy>=1.21
