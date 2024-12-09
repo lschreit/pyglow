@@ -1,153 +1,83 @@
 #!/usr/bin/env python3
 
-import glob
 import os
-from skbuild import setup  # This line replaces numpy.distutils.core
-from setuptools import find_namespace_packages
-packages=find_namespace_packages(where='src'),
-package_dir={"": "src"}
+from setuptools import setup, find_packages
+from pybind11.setup_helpers import Pybind11Extension, build_ext
 
 DL_MODELS = 'src/pyglow/models/dl_models'
 
-KPAP_FILES = sorted(glob.glob('src/pyglow/kpap/*'))
-DST_FILES = sorted(glob.glob('src/pyglow/dst/*'))
-AE_FILES = sorted(glob.glob('src/pyglow/ae/*'))
+# Define extensions
+extensions = [
+    Pybind11Extension(
+        name='igrf11py',
+        sources=[os.path.join(DL_MODELS, 'igrf11', fname) for fname in [
+            'igrf11_modified.f', 'sig_file_patched.pyf'
+        ]]
+    ),
+    Pybind11Extension(
+        name='igrf12py',
+        sources=[os.path.join(DL_MODELS, 'igrf12', fname) for fname in [
+            'igrf12_modified.f', 'sig_file_patched.pyf'
+        ]]
+    ),
+    Pybind11Extension(
+        name='hwm93py',
+        sources=[os.path.join(DL_MODELS, 'hwm93', fname) for fname in [
+            'hwm93_modified.f', 'sig_file_patched.pyf'
+        ]],
+        extra_compile_args=['-std=legacy']
+    ),
+    Pybind11Extension(
+        name='hwm07py',
+        sources=[os.path.join(DL_MODELS, 'hwm07', fname) for fname in [
+            'hwm07e_modified.f90', 'apexcord.f90', 'sig_file.pyf'
+        ]]
+    ),
+    Pybind11Extension(
+        name='hwm14py',
+        sources=[os.path.join(DL_MODELS, 'hwm14', fname) for fname in [
+            'hwm14.f90', 'sig_file.pyf'
+        ]],
+        extra_compile_args=['-std=legacy']
+    ),
+    Pybind11Extension(
+        name='iri12py',
+        sources=[os.path.join(DL_MODELS, 'iri12', fname) for fname in [
+            'cira.for', 'igrf.for', 'iridreg_modified.for', 'irifun.for',
+            'irisub.for', 'iritec.for', 'iriflip.for', 'sig_file_patched.pyf'
+        ]],
+        extra_compile_args=['-std=legacy', '-w', '-O2', '-fbacktrace',
+                            '-fno-automatic', '-fPIC']
+    ),
+    Pybind11Extension(
+        name='iri16py',
+        sources=[os.path.join(DL_MODELS, 'iri16', fname) for fname in [
+            'cira.for', 'igrf.for', 'iridreg_modified.for', 'irifun.for',
+            'irisub.for', 'iritec.for', 'iriflip_modified.for', 'cosd_sind.for',
+            'sig_file_patched.pyf'
+        ]],
+        extra_compile_args=['-std=legacy', '-w', '-O2', '-fbacktrace',
+                            '-fno-automatic', '-fPIC']
+    ),
+    Pybind11Extension(
+        name='msis00py',
+        sources=[os.path.join(DL_MODELS, 'msis', fname) for fname in [
+            'nrlmsise00_sub_patched.for', 'sig_file_patched.pyf'
+        ]],
+        extra_compile_args=['-std=legacy']
+    ),
+]
 
-
-def reencode(dosfile, target='utf-8'):
-    """
-    Remove invalid unicode characters that appear in the comments
-    """
-    with open(dosfile, 'r', encoding='cp1251', errors='ignore') as f:
-        content = f.read()
-    with open(dosfile, 'w', encoding=target) as f:
-        f.write(content)
-
-    return
-
-# Prepare CMake extensions
-cmake_args = []
-
-# IGRF 11:
-igrf11 = {
-    'name': 'igrf11py',
-    'sources': [os.path.join(DL_MODELS, 'igrf11', fname) for fname in [
-        'igrf11_modified.f',
-        'sig_file_patched.pyf',
-    ]]
-}
-
-# IGRF 12:
-igrf12 = {
-    'name': 'igrf12py',
-    'sources': [os.path.join(DL_MODELS, 'igrf12', fname) for fname in [
-        'igrf12_modified.f',
-        'sig_file_patched.pyf',
-    ]]
-}
-
-# HWM 93:
-hwm93 = {
-    'name': 'hwm93py',
-    'sources': [os.path.join(DL_MODELS, 'hwm93', fname) for fname in [
-        'hwm93_modified.f',
-        'sig_file_patched.pyf',
-    ]],
-    'extra_f77_compile_args': ['-std=legacy']
-}
-
-# Rencode HWM07 sources:
-hwm07_sources = [os.path.join(DL_MODELS, 'hwm07', fname) for fname in [
-    'hwm07e_modified.f90',
-    'apexcord.f90',
-]]
-for source in hwm07_sources:
-    reencode(source)
-
-# Use the makefile to generate a signature
-os.system('make -Cpyglow/models/dl_models/hwm07 sig')
-
-# HWM07:
-hwm07 = {
-    'name': 'hwm07py',
-    'sources': hwm07_sources + [os.path.join(DL_MODELS, 'hwm07', 'sig_file.pyf')],
-}
-
-# HWM14:
-hwm14 = {
-    'name': 'hwm14py',
-    'sources': [os.path.join(DL_MODELS, 'hwm14', fname) for fname in [
-        'hwm14.f90',
-        'sig_file.pyf',
-    ]],
-    'extra_f77_compile_args': ['-std=legacy']
-}
-
-# IRI 12:
-iri12 = {
-    'name': 'iri12py',
-    'sources': [os.path.join(DL_MODELS, 'iri12', fname) for fname in [
-        'cira.for',
-        'igrf.for',
-        'iridreg_modified.for',
-        'irifun.for',
-        'irisub.for',
-        'iritec.for',
-        'iriflip.for',
-        'sig_file_patched.pyf',
-    ]],
-    'extra_f77_compile_args': [
-        '-std=legacy',
-        '-w',
-        '-O2',
-        '-fbacktrace',
-        '-fno-automatic',
-        '-fPIC',
-    ]
-}
-
-# IRI16:
-iri16 = {
-    'name': 'iri16py',
-    'sources': [os.path.join(DL_MODELS, 'iri16', fname) for fname in [
-        'cira.for',
-        'igrf.for',
-        'iridreg_modified.for',
-        'irifun.for',
-        'irisub.for',
-        'iritec.for',
-        'iriflip_modified.for',
-        'cosd_sind.for',
-        'sig_file_patched.pyf',
-    ]],
-    'extra_f77_compile_args': [
-        '-std=legacy',
-        '-w',
-        '-O2',
-        '-fbacktrace',
-        '-fno-automatic',
-        '-fPIC',
-    ]
-}
-
-# MSIS00:
-msis00 = {
-    'name': 'msis00py',
-    'sources': [os.path.join(DL_MODELS, 'msis', fname) for fname in [
-        'nrlmsise00_sub_patched.for',
-        'sig_file_patched.pyf'
-    ]],
-    'extra_f77_compile_args': ['-std=legacy']
-}
-
-# Setup with skbuild
+# Setup configuration
 setup(
     name='pyglow',
     url='https://github.com/timduly4/pyglow',
-    packages=find_namespace_packages(where='src'),
-    package_dir={'pyglow': 'src/pyglow'},
-    cmake_args=cmake_args,
-    cmake_install_dir='src/pyglow',
+    author='Timothy M. Duly',
+    author_email='timduly4@gmail.com',
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
+    ext_modules=extensions,
+    cmdclass={'build_ext': build_ext},
     data_files=[
         ('pyglow_trash', ['src/pyglow/models/Makefile']),
         ('pyglow_trash', ['src/pyglow/models/get_models.py']),
@@ -302,66 +232,6 @@ setup(
             ],
         ),
         (
-            'pyglow/iri20_data/',
-            [
-                'src/pyglow/models/dl_models/iri20/apf107.dat',
-                'src/pyglow/models/dl_models/iri20/ccir11.asc',
-                'src/pyglow/models/dl_models/iri20/ccir12.asc',
-                'src/pyglow/models/dl_models/iri20/ccir13.asc',
-                'src/pyglow/models/dl_models/iri20/ccir14.asc',
-                'src/pyglow/models/dl_models/iri20/ccir15.asc',
-                'src/pyglow/models/dl_models/iri20/ccir16.asc',
-                'src/pyglow/models/dl_models/iri20/ccir17.asc',
-                'src/pyglow/models/dl_models/iri20/ccir18.asc',
-                'src/pyglow/models/dl_models/iri20/ccir19.asc',
-                'src/pyglow/models/dl_models/iri20/ccir20.asc',
-                'src/pyglow/models/dl_models/iri20/ccir21.asc',
-                'src/pyglow/models/dl_models/iri20/ccir22.asc',
-                'src/pyglow/models/dl_models/iri20/dgrf1945.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1950.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1955.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1960.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1965.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1970.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1975.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1980.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1985.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1990.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf1995.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf2000.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf2005.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf2010.dat',
-                'src/pyglow/models/dl_models/iri20/dgrf2015.dat',
-                'src/pyglow/models/dl_models/iri20/ig_rz.dat',
-                'src/pyglow/models/dl_models/iri20/igrf2020.dat',
-                'src/pyglow/models/dl_models/iri20/igrf2020s.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat11.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat12.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat13.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat14.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat15.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat16.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat17.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat18.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat19.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat20.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat21.dat',
-                'src/pyglow/models/dl_models/iri20/mcsat22.dat',
-                'src/pyglow/models/dl_models/iri20/ursi11.asc',
-                'src/pyglow/models/dl_models/iri20/ursi12.asc',
-                'src/pyglow/models/dl_models/iri20/ursi13.asc',
-                'src/pyglow/models/dl_models/iri20/ursi14.asc',
-                'src/pyglow/models/dl_models/iri20/ursi15.asc',
-                'src/pyglow/models/dl_models/iri20/ursi16.asc',
-                'src/pyglow/models/dl_models/iri20/ursi17.asc',
-                'src/pyglow/models/dl_models/iri20/ursi18.asc',
-                'src/pyglow/models/dl_models/iri20/ursi19.asc',
-                'src/pyglow/models/dl_models/iri20/ursi20.asc',
-                'src/pyglow/models/dl_models/iri20/ursi21.asc',
-                'src/pyglow/models/dl_models/iri20/ursi22.asc',
-            ],
-        ),
-        (
             'pyglow/kpap/',
             KPAP_FILES,
         ),
@@ -377,4 +247,3 @@ setup(
 )
 
 print("... All done!")
-
