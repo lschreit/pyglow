@@ -1,5 +1,0 @@
-# The fortran modules provided by this target.
-provides
- apexcord.mod
- newmodel.mod
- vshengine.mod

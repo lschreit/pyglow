@@ -1,1 +1,0 @@
-/usr/bin/gfortran -fPIC -O3 -DNDEBUG -O3 -shared  -o igrf11py.so CMakeFiles/igrf11py.dir/src/pyglow/models/dl_models/igrf11/igrf11_modified.f.o 
