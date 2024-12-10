@@ -1,17 +1,16 @@
 from skbuild import setup
-import glob
 
-KPAP_FILES = sorted(glob.glob('src/pyglow/kpap/*'))
-DST_FILES = sorted(glob.glob('src/pyglow/dst/*'))
-AE_FILES = sorted(glob.glob('src/pyglow/ae/*'))
 
 setup(
     name='pyglow',
     version='0.1.0',
+    description='Upper atmosphere climatological models in Python',
+    author='Timothy M. Duly',
+    author_email='timduly4@gmail.com',
+    url='https://github.com/lschreit/pyglow',
     packages=['pyglow'],
     package_dir={'pyglow': 'src/pyglow'},
     cmake_install_dir='src/pyglow',
-    cmake_source_dir='.',
     install_requires=[
         'future',
         'numpy',

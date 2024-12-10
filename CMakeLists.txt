@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.13)
 project(pyglow VERSION 0.1.0 LANGUAGES C Fortran)
 
-find_package(PythonExtensions REQUIRED)
-find_package(NumPy REQUIRED)
-find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
-include_directories(${NUMPY_INCLUDE_DIRS})
+# Find Python and NumPy
+find_package(Python REQUIRED COMPONENTS Interpreter Development)
+find_package(NumPy REQUIRED)
+find_package(PythonExtensions REQUIRED)
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+find_package(Python ${PYTHON_VERSION} REQUIRED COMPONENTS Development)
+
+include_directories(${Python_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
 
 set(DL_MODELS "src/pyglow/models/dl_models")
 set(PYTHON_SITE_PACKAGES )
@@ -52,7 +56,7 @@ target_compile_options(hwm14py PRIVATE -std=legacy)
 target_include_directories(hwm14py PRIVATE ${NUMPY_INCLUDE_DIRS})
 
 # IRI 12
-Python_add_library(iri12py MODULE
+Python_add_library(iri12py STATIC
   ${DL_MODELS}/iri12/cira.for
   ${DL_MODELS}/iri12/igrf.for
   ${DL_MODELS}/iri12/iridreg_modified.for
@@ -66,7 +70,7 @@ target_compile_options(iri12py PRIVATE -std=legacy -w -O2 -fbacktrace -fno-autom
 target_include_directories(iri12py PRIVATE ${NUMPY_INCLUDE_DIRS})
 
 # IRI 16
-Python_add_library(iri16py MODULE
+Python_add_library(iri16py STATIC
   ${DL_MODELS}/iri16/cira.for
   ${DL_MODELS}/iri16/igrf.for
   ${DL_MODELS}/iri16/iridreg_modified.for
@@ -82,7 +86,7 @@ target_include_directories(iri16py PRIVATE ${NUMPY_INCLUDE_DIRS})
 
 
 # IRI 20
-Python_add_library(iri20py MODULE
+Python_add_library(iri20py STATIC
   ${DL_MODELS}/iri20/cira.for
   ${DL_MODELS}/iri20/igrf.for
   ${DL_MODELS}/iri20/iridreg_modified.for
@@ -105,7 +109,9 @@ Python_add_library(msis00py MODULE
 target_compile_options(msis00py PRIVATE -std=legacy)
 target_include_directories(msis00py PRIVATE ${NUMPY_INCLUDE_DIRS})
 
-install(TARGETS igrf11py igrf12py hwm93py hwm07py hwm14py iri12py iri16py iri20py msis00py LIBRARY DESTINATION ${DL_MODELS})
+
+install(TARGETS igrf11py igrf12py hwm93py hwm07py hwm14py iri12py iri16py iri20py msis00py LIBRARY DESTINATION ./)
+
 
 # Install data files
 install(FILES
@@ -119,7 +125,6 @@ install(FILES
     src/pyglow/models/dl_models/hwm14/gd2qd.dat
     src/pyglow/models/dl_models/hwm14/dwm07b104i.dat
     src/pyglow/models/dl_models/hwm14/hwm123114.bin
-    src/pyglow/models/dl_models/hwm14/hwm14.f90
     DESTINATION hwm14_data/
 )
 
