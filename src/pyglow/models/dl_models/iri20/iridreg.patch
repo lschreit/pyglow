@@ -1,0 +1,11 @@
+--- iridreg.for_non_utf	2022-10-07 12:01:51.603780685 +0200
++++ iridreg.for	2022-10-07 12:02:18.291780350 +0200
+@@ -70,7 +70,7 @@
+ C
+ C     Reference: Friedrich, M., Pock, C., & Torkar, K. (2018), 
+ C                FIRI-2018, an updated empirical model of the lower ionosphere. 
+-C                Journal of Geophysical Research: Space Physics, 123, 6737–6751. 
++C                Journal of Geophysical Research: Space Physics, 123. 
+ C                https://doi.org/10.1029/2018JA025437
+ 
+ C     WRITTEN BY K. TORKAR, IWF GRAZ

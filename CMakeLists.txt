@@ -18,13 +18,25 @@ add_custom_target(
         COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/remove_non_ascii.py ${CMAKE_SOURCE_DIR}/${DL_MODELS}
 )
 
+# Custom target to reencode files from cp1251 to utf-8
+add_custom_target(
+        reencode_files ALL
+        COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/reencode_files.py ${CMAKE_SOURCE_DIR}/src/pyglow/models/dl_models/hwm07
+)
+
+# Custom target to run make command
+add_custom_target(
+        run_make_command ALL
+        COMMAND ${CMAKE_COMMAND} -E env bash -c "make -C ${CMAKE_SOURCE_DIR}/src/pyglow/models/dl_models/hwm07 sig"
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+
 # Function to add a project
 function(add_project project_name fortran_files pyf_file compile_options)
     project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
 
     set(fortran_src_files "")
     foreach(fortran_file IN LISTS fortran_files)
-        add_dependencies(${project_name} remove_non_ascii)
         list(APPEND fortran_src_files "${CMAKE_SOURCE_DIR}/${DL_MODELS}/${fortran_file}")
     endforeach()
 
@@ -33,12 +45,12 @@ function(add_project project_name fortran_files pyf_file compile_options)
 
     add_custom_command(
             OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}"
-            COMMAND ${Python_EXECUTABLE} -m numpy.f2py
+            COMMAND ${Python_EXECUTABLE} -m numpy.f2py --overwrite-signature
             ${fortran_src_files}
             "${CMAKE_SOURCE_DIR}/${DL_MODELS}/${pyf_file}"
             -m ${f2py_module_name}
             --lower
-            DEPENDS ${fortran_src_files}
+            DEPENDS remove_non_ascii reencode_files run_make_command ${fortran_src_files}
     )
 
     python_add_library(${project_name} MODULE
@@ -51,7 +63,7 @@ function(add_project project_name fortran_files pyf_file compile_options)
     target_link_libraries(${project_name} PUBLIC Python::NumPy)
     install(TARGETS ${project_name} DESTINATION ${project_name})
 endfunction()
-
+#[===[
 # IGRF 11
 add_project(igrf11py
         "igrf11/igrf11_modified.f"
@@ -72,14 +84,16 @@ add_project(hwm93py
         "hwm93/sig_file_patched.pyf"
         "-std=legacy"
 )
+]===]
 
 # HWM 07
+
 add_project(hwm07py
         "hwm07/hwm07e_modified.f90;hwm07/apexcord.f90"
         "hwm07/sig_file.pyf"
-        "-std=legacy"
+        "-fPIC"
 )
-
+#[===[
 # HWM 14
 add_project(hwm14py
         "hwm14/hwm14.f90"
@@ -100,7 +114,6 @@ add_project(iri16py
         "iri16/sig_file_patched.pyf"
         "-std=legacy -w -O2 -fbacktrace -fno-automatic -fPIC"
 )
-
 # IRI 20
 add_project(iri20py
         "iri20/cira.for;iri20/igrf.for;iri20/iridreg_modified.for;iri20/irifun.for;iri20/irisub.for;iri20/iritec.for;iri20/iriflip_modified.for;iri20/cosd_sind.for;iri20/rocdrift.for"
@@ -114,22 +127,21 @@ add_project(msis00py
         "msis/sig_file_patched.pyf"
         "-std=legacy"
 )
-
-
+]===]
 project(pyglow VERSION 0.1.0 LANGUAGES C Fortran)
 # Install data files
 install(FILES
         src/pyglow/models/dl_models/hwm07/apexgrid.dat
         src/pyglow/models/dl_models/hwm07/dwm07b_104i.dat
         src/pyglow/models/dl_models/hwm07/hwm071308e.dat
-        DESTINATION hwm07_data/
+        DESTINATION pyglow/hwm07_data/
 )
 
 install(FILES
         src/pyglow/models/dl_models/hwm14/gd2qd.dat
         src/pyglow/models/dl_models/hwm14/dwm07b104i.dat
         src/pyglow/models/dl_models/hwm14/hwm123114.bin
-        DESTINATION hwm14_data/
+        DESTINATION pyglow/hwm14_data/
 )
 
 install(FILES
@@ -176,7 +188,7 @@ install(FILES
         src/pyglow/models/dl_models/iri12/ursi20.asc
         src/pyglow/models/dl_models/iri12/ursi21.asc
         src/pyglow/models/dl_models/iri12/ursi22.asc
-        DESTINATION iri12_data/
+        DESTINATION pyglow/iri12_data/
 )
 
 install(FILES
@@ -235,7 +247,7 @@ install(FILES
         src/pyglow/models/dl_models/iri16/ursi20.asc
         src/pyglow/models/dl_models/iri16/ursi21.asc
         src/pyglow/models/dl_models/iri16/ursi22.asc
-        DESTINATION iri16_data/
+        DESTINATION pyglow/iri16_data/
 )
 
 install(FILES
@@ -294,20 +306,20 @@ install(FILES
         src/pyglow/models/dl_models/iri20/ursi20.asc
         src/pyglow/models/dl_models/iri20/ursi21.asc
         src/pyglow/models/dl_models/iri20/ursi22.asc
-        DESTINATION iri20_data/
+        DESTINATION pyglow/iri20_data/
 )
 
 file(GLOB kpap "src/pyglow/kpap/*")
 install(FILES ${kpap}
-        DESTINATION kpap/
+        DESTINATION pyglow/kpap/
 )
 
 file(GLOB dst "src/pyglow/dst/*")
 install(FILES ${dst}
-        DESTINATION dst/
+        DESTINATION pyglow/dst/
 )
 
 file(GLOB ae "src/pyglow/ae/*")
 install(FILES ${ae}
-        DESTINATION ae/
+        DESTINATION pyglow/ae/
 )

@@ -1,3 +1,4 @@
+chardet
 future
 numpy
 python-dateutil
