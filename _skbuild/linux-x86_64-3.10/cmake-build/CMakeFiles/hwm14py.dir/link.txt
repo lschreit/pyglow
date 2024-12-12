@@ -1,1 +1,0 @@
-/usr/bin/gfortran -fPIC -O3 -DNDEBUG -O3 -shared  -o hwm14py.so CMakeFiles/hwm14py.dir/src/pyglow/models/dl_models/hwm14/hwm14.f90.o 

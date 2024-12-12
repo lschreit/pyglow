@@ -1,1 +1,0 @@
-/usr/bin/gfortran -fPIC -O3 -DNDEBUG -O3 -shared  -o hwm07py.so CMakeFiles/hwm07py.dir/src/pyglow/models/dl_models/hwm07/hwm07e_modified.f90.o CMakeFiles/hwm07py.dir/src/pyglow/models/dl_models/hwm07/apexcord.f90.o 
