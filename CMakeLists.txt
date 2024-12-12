@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.17)
 # Common settings
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 set(DL_MODELS "${CMAKE_SOURCE_DIR}/src/pyglow/models/dl_models")
+# Define source and build directories for Meson
+set(MESON_SOURCE_DIR "${CMAKE_SOURCE_DIR}/path_to_meson_source")
+set(MESON_BUILD_DIR "${CMAKE_BINARY_DIR}/path_to_meson_build")
 
 # F2PY headers
 execute_process(
@@ -39,20 +42,31 @@ function(add_project project_name fortran_files pyf_file compile_options)
     foreach(fortran_file IN LISTS fortran_files)
         list(APPEND fortran_src_files "${DL_MODELS}/${fortran_file}")
     endforeach()
+    message(STATUS "Project name: ${project_name}")
+    # Get project_name without the last two characters
+    string(LENGTH ${project_name} project_name_length)
+    math(EXPR end_index "${project_name_length} - 2")
+    string(SUBSTRING ${project_name} 0 ${end_index} project_name_trimmed)
 
+    # Set the model_folder variable
+    set(model_folder "${project_name_trimmed}")
+    file(REMOVE_RECURSE "${DL_MODELS}/${model_folder}/build")
     set(f2py_module_name ${project_name})
-    set(f2py_module_c "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}module.c")
-
+    set(f2py_module_c "${DL_MODELS}/${model_folder}/build/${f2py_module_name}module.c")
     add_custom_command(
-            OUTPUT ${f2py_module_c}
-            COMMAND ${Python_EXECUTABLE} -m numpy.f2py -h "${DL_MODELS}/${pyf_file}" ${fortran_src_files}
-            COMMAND ${Python_EXECUTABLE} -m numpy.f2py -c -m ${f2py_module_name} "${DL_MODELS}/${pyf_file}" ${fortran_src_files}
-            DEPENDS remove_non_ascii reencode_files run_make_command ${fortran_src_files}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            OUTPUT "${f2py_module_c}"
+            COMMAND ${Python_EXECUTABLE}  -m "numpy.f2py" -c
+            "${DL_MODELS}/${pyf_file}" ${fortran_src_files}
+            --lower # Important
+            --build-dir "${DL_MODELS}/${model_folder}/build"
+
+            DEPENDS DEPENDS remove_non_ascii reencode_files run_make_command ${fortran_src_files} # Fortran source
+
     )
 
+
     python_add_library(${project_name} MODULE
-            ${f2py_module_c}
+           ${f2py_module_c}
             "${F2PY_INCLUDE_DIR}/fortranobject.c"
             ${fortran_src_files} WITH_SOABI
     )
@@ -62,13 +76,7 @@ function(add_project project_name fortran_files pyf_file compile_options)
     target_link_libraries(${project_name} PUBLIC Python::NumPy)
     install(TARGETS ${project_name} DESTINATION ${project_name})
 endfunction()
-#[===[
-    add_custom_command(
-            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}"
-            COMMAND ${Python_EXECUTABLE} -m numpy.f2py -h "${CMAKE_SOURCE_DIR}/${DL_MODELS}/${pyf_file}" ${fortran_src_files}
-            COMMAND ${Python_EXECUTABLE} -m numpy.f2py -c -m ${f2py_module_name} "${CMAKE_SOURCE_DIR}/${DL_MODELS}/${pyf_file}" ${fortran_src_files}
-            DEPENDS remove_non_ascii reencode_files ${fortran_src_files}
-    )
+
 # IGRF 11
 add_project(igrf11py
         "igrf11/igrf11_modified.f"
@@ -89,7 +97,6 @@ add_project(hwm93py
         "hwm93/sig_file_patched.pyf"
         "-std=legacy"
 )
-]===]
 
 # HWM 07
 
@@ -98,7 +105,7 @@ add_project(hwm07py
         "hwm07/sig_file.pyf"
         "-fPIC"
 )
-#[===[
+
 # HWM 14
 add_project(hwm14py
         "hwm14/hwm14.f90"
@@ -110,21 +117,37 @@ add_project(hwm14py
 add_project(iri12py
         "iri12/cira.for;iri12/igrf.for;iri12/iridreg_modified.for;iri12/irifun.for;iri12/irisub.for;iri12/iritec.for;iri12/iriflip.for"
         "iri12/sig_file_patched.pyf"
-        "-std=legacy -w -O2 -fbacktrace -fno-automatic -fPIC"
+        "-std=legacy"
+        "-w"
+        "-O2"
+        "-fbacktrace"
+        "-fno-automatic"
+        "-fPIC"
 )
 
 # IRI 16
 add_project(iri16py
         "iri16/cira.for;iri16/igrf.for;iri16/iridreg_modified.for;iri16/irifun.for;iri16/irisub.for;iri16/iritec.for;iri16/iriflip_modified.for;iri16/cosd_sind.for"
         "iri16/sig_file_patched.pyf"
-        "-std=legacy -w -O2 -fbacktrace -fno-automatic -fPIC"
+        "-std=legacy"
+        "-w"
+        "-O2"
+        "-fbacktrace"
+        "-fno-automatic"
+        "-fPIC"
 )
 # IRI 20
 add_project(iri20py
         "iri20/cira.for;iri20/igrf.for;iri20/iridreg_modified.for;iri20/irifun.for;iri20/irisub.for;iri20/iritec.for;iri20/iriflip_modified.for;iri20/cosd_sind.for;iri20/rocdrift.for"
         "iri20/sig_file_patched.pyf"
-        "-std=legacy -w -O2 -fbacktrace -fno-automatic -fPIC"
+        "-std=legacy"
+        "-w"
+        "-O2"
+        "-fbacktrace"
+        "-fno-automatic"
+        "-fPIC"
 )
+
 
 # MSIS 00
 add_project(msis00py
@@ -132,7 +155,7 @@ add_project(msis00py
         "msis/sig_file_patched.pyf"
         "-std=legacy"
 )
-]===]
+
 project(pyglow VERSION 0.1.0 LANGUAGES C Fortran)
 # Install data files
 install(FILES
