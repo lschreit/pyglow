@@ -197,6 +197,7 @@ end subroutine HWMQT
 subroutine HWMupdate(input,last,fs,fl,fm,vbar,wbar,ebz,ebm,zwght,lev,u,v)
 
     use NewModel
+
     implicit none
     
     real(8),intent(in)              :: input(5) ! jday,utsec,glon,glat,alt

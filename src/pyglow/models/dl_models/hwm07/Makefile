@@ -20,7 +20,7 @@ patch_hwm07e:
 	patch hwm07e_unix.f90 -i hwm07e.patch -o hwm07e_modified.f90
 
 sig:
-	f2py -m $(mod) --overwrite-signature -h sig_file.pyf $(fortran_files) only: $(only) : | tee out1
+	f2py -m $(mod) -h sig_file.pyf $(fortran_files) only: $(only) : | tee out1
 
 mod:
 	f2py -c sig_file.pyf $(fortran_files)  --fcompiler=gfortran | tee out2

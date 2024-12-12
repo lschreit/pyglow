@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.17)
 
 # Common settings
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module NumPy)
-set(DL_MODELS "src/pyglow/models/dl_models")
+set(DL_MODELS "${CMAKE_SOURCE_DIR}/src/pyglow/models/dl_models")
 
 # F2PY headers
 execute_process(
@@ -15,19 +15,19 @@ execute_process(
 # Function to preprocess Fortran files to remove non-ASCII characters
 add_custom_target(
         remove_non_ascii ALL
-        COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/remove_non_ascii.py ${CMAKE_SOURCE_DIR}/${DL_MODELS}
+        COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/remove_non_ascii.py ${DL_MODELS}
 )
 
 # Custom target to reencode files from cp1251 to utf-8
 add_custom_target(
         reencode_files ALL
-        COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/reencode_files.py ${CMAKE_SOURCE_DIR}/src/pyglow/models/dl_models/hwm07
+        COMMAND ${Python_EXECUTABLE} ${CMAKE_SOURCE_DIR}/reencode_files.py ${DL_MODELS}/hwm07
 )
 
 # Custom target to run make command
 add_custom_target(
         run_make_command ALL
-        COMMAND ${CMAKE_COMMAND} -E env bash -c "make -C ${CMAKE_SOURCE_DIR}/src/pyglow/models/dl_models/hwm07 sig"
+        COMMAND ${CMAKE_COMMAND} -E env bash -c "make -C ${DL_MODELS}/hwm07 sig"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
@@ -37,26 +37,25 @@ function(add_project project_name fortran_files pyf_file compile_options)
 
     set(fortran_src_files "")
     foreach(fortran_file IN LISTS fortran_files)
-        list(APPEND fortran_src_files "${CMAKE_SOURCE_DIR}/${DL_MODELS}/${fortran_file}")
+        list(APPEND fortran_src_files "${DL_MODELS}/${fortran_file}")
     endforeach()
 
     set(f2py_module_name ${project_name})
-    set(f2py_module_c "${f2py_module_name}module.c")
+    set(f2py_module_c "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_name}module.c")
 
     add_custom_command(
-            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}"
-            COMMAND ${Python_EXECUTABLE} -m numpy.f2py --overwrite-signature
-            ${fortran_src_files}
-            "${CMAKE_SOURCE_DIR}/${DL_MODELS}/${pyf_file}"
-            -m ${f2py_module_name}
-            --lower
+            OUTPUT ${f2py_module_c}
+            COMMAND ${Python_EXECUTABLE} -m numpy.f2py -h "${DL_MODELS}/${pyf_file}" ${fortran_src_files}
+            COMMAND ${Python_EXECUTABLE} -m numpy.f2py -c -m ${f2py_module_name} "${DL_MODELS}/${pyf_file}" ${fortran_src_files}
             DEPENDS remove_non_ascii reencode_files run_make_command ${fortran_src_files}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
     python_add_library(${project_name} MODULE
-            "${f2py_module_name}module.c"
+            ${f2py_module_c}
             "${F2PY_INCLUDE_DIR}/fortranobject.c"
-            ${fortran_src_files} WITH_SOABI)
+            ${fortran_src_files} WITH_SOABI
+    )
 
     target_include_directories(${project_name} PUBLIC ${F2PY_INCLUDE_DIR})
     target_compile_options(${project_name} PRIVATE ${compile_options})
@@ -64,6 +63,12 @@ function(add_project project_name fortran_files pyf_file compile_options)
     install(TARGETS ${project_name} DESTINATION ${project_name})
 endfunction()
 #[===[
+    add_custom_command(
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}"
+            COMMAND ${Python_EXECUTABLE} -m numpy.f2py -h "${CMAKE_SOURCE_DIR}/${DL_MODELS}/${pyf_file}" ${fortran_src_files}
+            COMMAND ${Python_EXECUTABLE} -m numpy.f2py -c -m ${f2py_module_name} "${CMAKE_SOURCE_DIR}/${DL_MODELS}/${pyf_file}" ${fortran_src_files}
+            DEPENDS remove_non_ascii reencode_files ${fortran_src_files}
+    )
 # IGRF 11
 add_project(igrf11py
         "igrf11/igrf11_modified.f"
