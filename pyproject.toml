@@ -1,16 +1,17 @@
 [build-system]
 requires = [
     "scikit-build-core",
-    "numpy>=2.2",
-    "chardet",
-    "meson"
+    "numpy>=1.21",
 ]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "pyglow"
-version = "1.0.1"
-requires-python = ">=3.9"
+version = "0.1.0"
+description = "Upper atmosphere climatological models in Python"
+authors = [
+    { name="Timothy M. Duly", email="timduly4@gmail.com" }
+]
 dependencies = ["numpy>=1.21"]
 
 [tool.scikit-build]

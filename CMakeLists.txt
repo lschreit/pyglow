@@ -1,12 +1,8 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.17.2...3.26)
 
 # Common settings
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 set(DL_MODELS "${CMAKE_SOURCE_DIR}/src/pyglow/models/dl_models")
-# Define source and build directories for Meson
-set(MESON_SOURCE_DIR "${CMAKE_SOURCE_DIR}/path_to_meson_source")
-set(MESON_BUILD_DIR "${CMAKE_BINARY_DIR}/path_to_meson_build")
-
 # F2PY headers
 execute_process(
         COMMAND "${Python_EXECUTABLE}"
@@ -14,6 +10,7 @@ execute_process(
         OUTPUT_VARIABLE F2PY_INCLUDE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
 
 # Function to preprocess Fortran files to remove non-ASCII characters
 add_custom_target(
@@ -31,59 +28,52 @@ add_custom_target(
 add_custom_target(
         run_make_command ALL
         COMMAND ${CMAKE_COMMAND} -E env bash -c "make -C ${DL_MODELS}/hwm07 sig"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        #WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 # Function to add a project
 function(add_project project_name fortran_files pyf_file compile_options)
-    project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+    #project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
 
-    set(fortran_src_files "")
-    foreach(fortran_file IN LISTS fortran_files)
-        list(APPEND fortran_src_files "${DL_MODELS}/${fortran_file}")
-    endforeach()
-    message(STATUS "Project name: ${project_name}")
-    # Get project_name without the last two characters
-    string(LENGTH ${project_name} project_name_length)
-    math(EXPR end_index "${project_name_length} - 2")
-    string(SUBSTRING ${project_name} 0 ${end_index} project_name_trimmed)
-
-    # Set the model_folder variable
-    set(model_folder "${project_name_trimmed}")
-    file(REMOVE_RECURSE "${DL_MODELS}/${model_folder}/build")
     set(f2py_module_name ${project_name})
-    set(f2py_module_c "${DL_MODELS}/${model_folder}/build/${f2py_module_name}module.c")
+    set(fortran_src_file "${DL_MODELS}/${fortran_files}")
+    message(STATUS "Fortran source files: ${fortran_src_file}")
+    message(STATUS "CMAKE source directory: ${CMAKE_SOURCE_DIR}")
+    set(f2py_module_c "${f2py_module_name}module.c")
+
     add_custom_command(
-            OUTPUT "${f2py_module_c}"
-            COMMAND ${Python_EXECUTABLE}  -m "numpy.f2py" -c
-            "${DL_MODELS}/${pyf_file}" ${fortran_src_files}
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}"
+            COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
+            "${fortran_src_file}"
+            "${DL_MODELS}/${pyf_file}"  # Must include custom .pyf file
+            -m ${f2py_module_name}
             --lower # Important
-            --build-dir "${DL_MODELS}/${model_folder}/build"
-
-            DEPENDS DEPENDS remove_non_ascii reencode_files run_make_command ${fortran_src_files} # Fortran source
+            DEPENDS remove_non_ascii reencode_files run_make_command "${fortran_files}" # Fortran source
 
     )
 
-
-    python_add_library(${project_name} MODULE
-           ${f2py_module_c}
+    python_add_library(${CMAKE_PROJECT_NAME} MODULE
+            "${f2py_module_name}module.c"
             "${F2PY_INCLUDE_DIR}/fortranobject.c"
-            ${fortran_src_files} WITH_SOABI
-    )
+            "${fortran_src_file}" WITH_SOABI)
 
-    target_include_directories(${project_name} PUBLIC ${F2PY_INCLUDE_DIR})
+    target_include_directories(${f2py_module_name} PUBLIC
+            ${F2PY_INCLUDE_DIR})
     target_compile_options(${project_name} PRIVATE ${compile_options})
-    target_link_libraries(${project_name} PUBLIC Python::NumPy)
-    install(TARGETS ${project_name} DESTINATION ${project_name})
+    target_link_libraries(${f2py_module_name} PUBLIC Python::NumPy)
+
+    install(TARGETS ${f2py_module_name} DESTINATION ${project_name})
 endfunction()
 
 # IGRF 11
-add_project(igrf11py
+set(project_name "igrf11py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "igrf11/igrf11_modified.f"
         "igrf11/sig_file_patched.pyf"
         "-std=legacy"
 )
-
+#[===[
 # IGRF 12
 add_project(igrf12py
         "igrf12/igrf12_modified.f"
@@ -155,21 +145,21 @@ add_project(msis00py
         "msis/sig_file_patched.pyf"
         "-std=legacy"
 )
-
+]===]
 project(pyglow VERSION 0.1.0 LANGUAGES C Fortran)
 # Install data files
 install(FILES
         src/pyglow/models/dl_models/hwm07/apexgrid.dat
         src/pyglow/models/dl_models/hwm07/dwm07b_104i.dat
         src/pyglow/models/dl_models/hwm07/hwm071308e.dat
-        DESTINATION pyglow/hwm07_data/
+        DESTINATION hwm07_data/
 )
 
 install(FILES
         src/pyglow/models/dl_models/hwm14/gd2qd.dat
         src/pyglow/models/dl_models/hwm14/dwm07b104i.dat
         src/pyglow/models/dl_models/hwm14/hwm123114.bin
-        DESTINATION pyglow/hwm14_data/
+        DESTINATION hwm14_data/
 )
 
 install(FILES
@@ -216,7 +206,7 @@ install(FILES
         src/pyglow/models/dl_models/iri12/ursi20.asc
         src/pyglow/models/dl_models/iri12/ursi21.asc
         src/pyglow/models/dl_models/iri12/ursi22.asc
-        DESTINATION pyglow/iri12_data/
+        DESTINATION iri12_data/
 )
 
 install(FILES
@@ -275,7 +265,7 @@ install(FILES
         src/pyglow/models/dl_models/iri16/ursi20.asc
         src/pyglow/models/dl_models/iri16/ursi21.asc
         src/pyglow/models/dl_models/iri16/ursi22.asc
-        DESTINATION pyglow/iri16_data/
+        DESTINATION iri16_data/
 )
 
 install(FILES
@@ -334,20 +324,20 @@ install(FILES
         src/pyglow/models/dl_models/iri20/ursi20.asc
         src/pyglow/models/dl_models/iri20/ursi21.asc
         src/pyglow/models/dl_models/iri20/ursi22.asc
-        DESTINATION pyglow/iri20_data/
+        DESTINATION iri20_data/
 )
 
 file(GLOB kpap "src/pyglow/kpap/*")
 install(FILES ${kpap}
-        DESTINATION pyglow/kpap/
+        DESTINATION kpap/
 )
 
 file(GLOB dst "src/pyglow/dst/*")
 install(FILES ${dst}
-        DESTINATION pyglow/dst/
+        DESTINATION dst/
 )
 
 file(GLOB ae "src/pyglow/ae/*")
 install(FILES ${ae}
-        DESTINATION pyglow/ae/
+        DESTINATION ae/
 )
