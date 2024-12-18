@@ -1,8 +1,17 @@
 cmake_minimum_required(VERSION 3.17.2...3.26)
 
+# Clear CMake cache
+execute_process(COMMAND ${CMAKE_COMMAND} -E remove_directory "${CMAKE_BINARY_DIR}/CMakeFiles")
+execute_process(COMMAND ${CMAKE_COMMAND} -E remove "${CMAKE_BINARY_DIR}/CMakeCache.txt")
+message(STATUS "CMAKE binary directory: ${CMAKE_CURRENT_BINARY_DIR}")
+message(STATUS "CMAKE binary directory: ${CMAKE_BINARY_DIR}")
+
+
 # Common settings
 find_package(Python REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 set(DL_MODELS "${CMAKE_SOURCE_DIR}/src/pyglow/models/dl_models")
+set(mod_path "src/pyglow/models/dl_models")
+
 # F2PY headers
 execute_process(
         COMMAND "${Python_EXECUTABLE}"
@@ -10,7 +19,6 @@ execute_process(
         OUTPUT_VARIABLE F2PY_INCLUDE_DIR
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-
 
 # Function to preprocess Fortran files to remove non-ASCII characters
 add_custom_target(
@@ -28,15 +36,20 @@ add_custom_target(
 add_custom_target(
         run_make_command ALL
         COMMAND ${CMAKE_COMMAND} -E env bash -c "make -C ${DL_MODELS}/hwm07 sig"
-        #WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 # Function to add a project
 function(add_project project_name fortran_files pyf_file compile_options)
-    #project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
-
     set(f2py_module_name ${project_name})
-    set(fortran_src_file "${DL_MODELS}/${fortran_files}")
+
+    set(fortran_src_file "${fortran_files}")
+    set(fortran_files "${fortran_files}")
+    separate_arguments(fortran_files)
+    list(TRANSFORM fortran_files PREPEND "${mod_path}/")
+    separate_arguments(fortran_src_file)
+    list(TRANSFORM fortran_src_file PREPEND "${DL_MODELS}/")
+    string(REPLACE ";" " " fortran_f2py_files "${fortran_src_file}")
+    message(STATUS "Fortran files: ${fortran_files}")
     message(STATUS "Fortran source files: ${fortran_src_file}")
     message(STATUS "CMAKE source directory: ${CMAKE_SOURCE_DIR}")
     set(f2py_module_c "${f2py_module_name}module.c")
@@ -44,27 +57,34 @@ function(add_project project_name fortran_files pyf_file compile_options)
     add_custom_command(
             OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${f2py_module_c}"
             COMMAND ${PYTHON_EXECUTABLE} -m numpy.f2py
-            "${fortran_src_file}"
+            "${fortran_f2py_files}"
             "${DL_MODELS}/${pyf_file}"  # Must include custom .pyf file
             -m ${f2py_module_name}
             --lower # Important
             DEPENDS remove_non_ascii reencode_files run_make_command "${fortran_files}" # Fortran source
-
     )
 
     python_add_library(${CMAKE_PROJECT_NAME} MODULE
             "${f2py_module_name}module.c"
             "${F2PY_INCLUDE_DIR}/fortranobject.c"
-            "${fortran_src_file}" WITH_SOABI)
+            ${fortran_src_file}
+    )
+
+    #foreach (file ${fortran_src_file})
+    #    target_add_library(${CMAKE_PROJECT_NAME} PUBLIC ${file})
+    #endforeach()
+    #WITH_SOABI
 
     target_include_directories(${f2py_module_name} PUBLIC
             ${F2PY_INCLUDE_DIR})
-    target_compile_options(${project_name} PRIVATE ${compile_options})
+    foreach(opt ${compile_options})
+        target_compile_options(${project_name} PRIVATE ${opt})
+    endforeach()
     target_link_libraries(${f2py_module_name} PUBLIC Python::NumPy)
 
     install(TARGETS ${f2py_module_name} DESTINATION ${project_name})
 endfunction()
-
+#[===[
 # IGRF 11
 set(project_name "igrf11py")
 project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
@@ -73,93 +93,97 @@ add_project(${project_name}
         "igrf11/sig_file_patched.pyf"
         "-std=legacy"
 )
-#[===[
+
 # IGRF 12
-add_project(igrf12py
+set(project_name "igrf12py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "igrf12/igrf12_modified.f"
         "igrf12/sig_file_patched.pyf"
         "-std=legacy"
 )
 
 # HWM 93
-add_project(hwm93py
+set(project_name "hwm93py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "hwm93/hwm93_modified.f"
         "hwm93/sig_file_patched.pyf"
         "-std=legacy"
 )
 
 # HWM 07
-
-add_project(hwm07py
+set(project_name "hwm07py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "hwm07/hwm07e_modified.f90;hwm07/apexcord.f90"
         "hwm07/sig_file.pyf"
         "-fPIC"
 )
 
 # HWM 14
-add_project(hwm14py
+set(project_name "hwm14py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "hwm14/hwm14.f90"
         "hwm14/sig_file.pyf"
         "-std=legacy"
 )
 
 # IRI 12
-add_project(iri12py
+set(project_name "iri12py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "iri12/cira.for;iri12/igrf.for;iri12/iridreg_modified.for;iri12/irifun.for;iri12/irisub.for;iri12/iritec.for;iri12/iriflip.for"
         "iri12/sig_file_patched.pyf"
-        "-std=legacy"
-        "-w"
-        "-O2"
-        "-fbacktrace"
-        "-fno-automatic"
-        "-fPIC"
+        "-std=legacy;-w;-O2;-fbacktrace;-fno-automatic;-fPIC"
 )
 
 # IRI 16
-add_project(iri16py
+set(project_name "iri16py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "iri16/cira.for;iri16/igrf.for;iri16/iridreg_modified.for;iri16/irifun.for;iri16/irisub.for;iri16/iritec.for;iri16/iriflip_modified.for;iri16/cosd_sind.for"
         "iri16/sig_file_patched.pyf"
-        "-std=legacy"
-        "-w"
-        "-O2"
-        "-fbacktrace"
-        "-fno-automatic"
-        "-fPIC"
+        "-std=legacy;-w;-O2;-fbacktrace;-fno-automatic;-fPIC"
 )
+]===]
 # IRI 20
-add_project(iri20py
+set(project_name "iri20py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "iri20/cira.for;iri20/igrf.for;iri20/iridreg_modified.for;iri20/irifun.for;iri20/irisub.for;iri20/iritec.for;iri20/iriflip_modified.for;iri20/cosd_sind.for;iri20/rocdrift.for"
         "iri20/sig_file_patched.pyf"
-        "-std=legacy"
-        "-w"
-        "-O2"
-        "-fbacktrace"
-        "-fno-automatic"
-        "-fPIC"
+        "-std=legacy;-w;-O2;-fbacktrace;-fno-automatic;-fPIC"
+        #"-std=legacy;-w;-O2;-fbacktrace;-fno-automatic;-fPIC"
 )
 
 
 # MSIS 00
-add_project(msis00py
+set(project_name "msis00py")
+project(${project_name} VERSION 1.0.0 LANGUAGES C Fortran)
+add_project(${project_name}
         "msis/nrlmsise00_sub_patched.for"
         "msis/sig_file_patched.pyf"
         "-std=legacy"
 )
-]===]
+
+
+
 project(pyglow VERSION 0.1.0 LANGUAGES C Fortran)
 # Install data files
 install(FILES
         src/pyglow/models/dl_models/hwm07/apexgrid.dat
         src/pyglow/models/dl_models/hwm07/dwm07b_104i.dat
         src/pyglow/models/dl_models/hwm07/hwm071308e.dat
-        DESTINATION hwm07_data/
+        DESTINATION pyglow/hwm07_data/
 )
 
 install(FILES
         src/pyglow/models/dl_models/hwm14/gd2qd.dat
         src/pyglow/models/dl_models/hwm14/dwm07b104i.dat
         src/pyglow/models/dl_models/hwm14/hwm123114.bin
-        DESTINATION hwm14_data/
+        DESTINATION pyglow/hwm14_data/
 )
 
 install(FILES
@@ -206,7 +230,7 @@ install(FILES
         src/pyglow/models/dl_models/iri12/ursi20.asc
         src/pyglow/models/dl_models/iri12/ursi21.asc
         src/pyglow/models/dl_models/iri12/ursi22.asc
-        DESTINATION iri12_data/
+        DESTINATION pyglow/iri12_data/
 )
 
 install(FILES
@@ -265,7 +289,7 @@ install(FILES
         src/pyglow/models/dl_models/iri16/ursi20.asc
         src/pyglow/models/dl_models/iri16/ursi21.asc
         src/pyglow/models/dl_models/iri16/ursi22.asc
-        DESTINATION iri16_data/
+        DESTINATION pyglow/iri16_data/
 )
 
 install(FILES
@@ -324,20 +348,20 @@ install(FILES
         src/pyglow/models/dl_models/iri20/ursi20.asc
         src/pyglow/models/dl_models/iri20/ursi21.asc
         src/pyglow/models/dl_models/iri20/ursi22.asc
-        DESTINATION iri20_data/
+        DESTINATION pyglow/iri20_data/
 )
 
 file(GLOB kpap "src/pyglow/kpap/*")
 install(FILES ${kpap}
-        DESTINATION kpap/
+        DESTINATION pyglow/kpap/
 )
 
 file(GLOB dst "src/pyglow/dst/*")
 install(FILES ${dst}
-        DESTINATION dst/
+        DESTINATION pyglow/dst/
 )
 
 file(GLOB ae "src/pyglow/ae/*")
 install(FILES ${ae}
-        DESTINATION ae/
+        DESTINATION pyglow/ae/
 )
