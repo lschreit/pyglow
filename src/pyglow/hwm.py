@@ -2,9 +2,9 @@ import os
 import numpy as np
 
 from .constants import DIR_FILE, nan
-from hwm93py import gws5 as hwm93
-from hwm07py import hwmqt as hwm07
-from hwm14py import hwm14
+from hwm93py.hwm93py import gws5 as hwm93
+from hwm07py.hwm07py import hwmqt as hwm07
+from hwm14py.hwm14py import hwm14
 
 
 class HWM(object):

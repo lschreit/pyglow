@@ -1,14 +1,14 @@
 import numpy as np
 import os
 
-from iri12py import iri_sub as iri12
-from iri16py import iri_sub as iri16
-from iri20py import iri_sub as iri20
-from iri16py import read_ig_rz as read_ig_rz_16
-from iri16py import readapf107 as readapf107_16 
+from iri12py.iri12py import iri_sub as iri12
+from iri16py.iri16py import iri_sub as iri16
+from iri20py.iri20py import iri_sub as iri20
+from iri16py.iri16py import read_ig_rz as read_ig_rz_16
+from iri16py.iri16py import readapf107 as readapf107_16 
 
-from iri20py import read_ig_rz as read_ig_rz_20
-from iri20py import readapf107 as readapf107_20 
+from iri20py.iri20py import read_ig_rz as read_ig_rz_20
+from iri20py.iri20py import readapf107 as readapf107_20 
 
 from .constants import DIR_FILE, nan
 
@@ -184,7 +184,9 @@ class IRI(object):
         if not compute_Ni:
             jf[2] = 0
 
+        
         oarr = np.zeros((100,))
+        
 
         if NmF2 is not None:
             # User specified F2 peak density

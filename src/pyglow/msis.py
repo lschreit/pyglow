@@ -1,6 +1,6 @@
 import numpy as np
 
-from msis00py import gtd7 as msis00  # noqa E402
+from msis00py.msis00py import gtd7 as msis00  # noqa E402
 from .constants import nan
 
 CONSTITUENTS = ['HE', 'O', 'N2', 'O2', 'AR', 'H', 'N', 'O_anomalous']

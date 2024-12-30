@@ -25,8 +25,8 @@ def cubic_interp1d(x0, x, y):
 
     additional ref: www.math.uh.edu/~jingqiu/math4364/spline.pdf
     """
-    x = np.asfarray(x)
-    y = np.asfarray(y)
+    x = np.asarray(x)
+    y = np.asarray(y)
 
     # remove non finite values
     # indexes = np.isfinite(x)

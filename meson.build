@@ -1,8 +1,10 @@
 project('pyglow', 'c', 'fortran',
-  version : '0.1.0',
-  default_options : ['warning_level=2', 'werror=true']
+        version : '0.1.0',
+        default_options : ['warning_level=2','cpp_std=c++17', 'fortran_std=legacy']
 )
 add_languages('fortran')
+add_project_arguments('-std=legacy','-w','-O2','-fbacktrace','-fno-automatic','-fPIC', language: 'fortran')
+add_project_arguments('-fPIC', language: 'c')
 
 py_mod = import('python')
 py = py_mod.find_installation(pure: false)
@@ -20,52 +22,77 @@ incdir_f2py = run_command(py,
 
 inc_np = include_directories(incdir_numpy, incdir_f2py)
 
-pyglow_mod_dir = meson.source_root() / 'src/pyglow/models/dl_models'
+pyglow_mod_dir = meson.project_source_root() / 'src/pyglow/models/dl_models'
 
 # Custom targets to preprocess Fortran files
 remove_non_ascii = custom_target('remove_non_ascii',
-  input : [],
-  output : 'remove_non_ascii',
-  command : [python, meson.source_root() / 'remove_non_ascii.py', pyglow_mod_dir],
-  build_by_default : true
+                                 input : [],
+                                 output : 'remove_non_ascii',
+                                 command : [py, meson.project_source_root() / 'remove_non_ascii.py', pyglow_mod_dir],
+                                 build_by_default : true
 )
 
 reencode_files = custom_target('reencode_files',
-  input : [],
-  output : 'reencode_files',
-  command : [python, meson.source_root() / 'reencode_files.py', pyglow_mod_dir / 'hwm07'],
-  build_by_default : true
+                               input : [],
+                               output : 'reencode_files',
+                               command : [py, meson.project_source_root() / 'reencode_files.py', pyglow_mod_dir / 'hwm07'],
+                               build_by_default : true
 )
 
 run_make_command = custom_target('run_make_command',
-  input : [],
-  output : 'run_make_command',
-  command : ['sh', '-c', 'make -C ' + pyglow_mod_dir / 'hwm07' + ' sig'],
-  build_by_default : true
+                                 input : [],
+                                 output : 'run_make_command',
+                                 command : ['sh', '-c', 'make -C ' + pyglow_mod_dir / 'hwm07' + ' sig'],
+                                 build_by_default : true
 )
 
-# Function to add a project
-def add_project(project_name, fortran_files, pyf_file, compile_options):
-  fortran_src_file = fortran_files.split(';')
-  fortran_files = [pyglow_mod_dir / f for f in fortran_src_file]
-  module_c = project_name + 'module.c'
+project_name = 'igrf11py'
+fortran_files= 'igrf11/igrf11_modified.f'
+pyf_file     = 'igrf11/sig_file_patched.pyf'
+add_project_arguments('-O2', '-g', language: 'fortran')
+module_c = project_name + 'module.c'
 
-  model_source = custom_target(module_c,
-                             input : [fortran_files, pyglow_mod_dir / pyf_file],  # .f so no F90 wrappers
-                             output : [module_c, project_name+'-f2pywrappers.f'],
-                             command : [py, '-m', 'numpy.f2py', '@INPUT@', '-m', 'fibby', '--lower']
+model_source = custom_target(module_c,
+                               input : [pyglow_mod_dir / fortran_files, pyglow_mod_dir / pyf_file],
+                               output : [module_c, project_name + '-f2pywrappers.f'],
+                               command : [py, '-m', 'numpy.f2py', '-m', project_name, '--lower', '@INPUT@']
 )
-  inc_np = include_directories(incdir_numpy, incdir_f2py)
+inc_np = include_directories(incdir_numpy, incdir_f2py)
+py.extension_module(project_name,
+                      [pyglow_mod_dir / fortran_files, model_source],
+                      incdir_f2py / 'fortranobject.c',
+                      include_directories : inc_np,
+                      dependencies : py_dep,
+                      install : true
+)
 
-  py.extension_module('fibby',
-                    ['fib1.f', fibby_source],
+
+project_name = 'iri12py'
+fortran_files= ['iri12/cira.for','iri12/igrf.for','iri12/iridreg_modified.for','iri12/irifun.for','iri12/irisub.for','iri12/iritec.for','iri12/iriflip.for']
+pyf_file     = 'iri12/sig_file_patched.pyf'
+#-std=legacy;-w;-O2;-fbacktrace;-fno-automatic;-fPIC
+module_c = project_name + 'module.c'
+new_fortran_files = []
+foreach f : fortran_files
+    new_fortran_files += [pyglow_mod_dir / f]
+endforeach
+fortran_files = new_fortran_files
+
+model_source = custom_target(module_c,
+                             input : [fortran_files, pyglow_mod_dir / pyf_file],
+                             output : [module_c, project_name + '-f2pywrappers.f'],
+                             command : [py, '-m', 'numpy.f2py', '-m', project_name, '--lower', '@INPUT@']
+)
+inc_np = include_directories(incdir_numpy, incdir_f2py)
+py.extension_module(project_name,
+                    [fortran_files, model_source],
                     incdir_f2py / 'fortranobject.c',
-                    include_directories: inc_np,
+                    include_directories : inc_np,
                     dependencies : py_dep,
                     install : true
-
+)
 # Example of adding projects
-add_project('igrf11py', 'igrf11/igrf11_modified.f', 'igrf11/sig_file_patched.pyf', ['-std=legacy'])
+#add_project('igrf11py', 'igrf11/igrf11_modified.f', 'igrf11/sig_file_patched.pyf', ['-std=legacy'])
 #add_project('igrf12py', 'igrf12/igrf12_modified.f', 'igrf12/sig_file_patched.pyf', ['-std=legacy'])
 #add_project('hwm93py', 'hwm93/hwm93_modified.f', 'hwm93/sig_file_patched.pyf', ['-std=legacy'])
 #add_project('hwm07py', 'hwm07/hwm07e_modified.f90;hwm07/apexcord.f90', 'hwm07/sig_file.pyf', ['-fPIC'])
@@ -76,39 +103,177 @@ add_project('igrf11py', 'igrf11/igrf11_modified.f', 'igrf11/sig_file_patched.pyf
 #add_project('msis00py', 'msis/nrlmsise00_sub_patched.for', 'msis/sig_file_patched.pyf', ['-std=legacy'])
 
 # Install data files
-install_data([
-  'src/pyglow/models/dl_models/hwm07/apexgrid.dat',
-  'src/pyglow/models/dl_models/hwm07/dwm07b_104i.dat',
-  'src/pyglow/models/dl_models/hwm07/hwm071308e.dat'
-], install_dir : 'pyglow/hwm07_data/')
+install_data(['src/pyglow/models/dl_models/hwm07/apexgrid.dat',
+              'src/pyglow/models/dl_models/hwm07/dwm07b_104i.dat',
+              'src/pyglow/models/dl_models/hwm07/hwm071308e.dat'
+], install_dir : get_option('datadir') / 'pyglow/hwm07_data/')
 
 install_data([
   'src/pyglow/models/dl_models/hwm14/gd2qd.dat',
   'src/pyglow/models/dl_models/hwm14/dwm07b104i.dat',
   'src/pyglow/models/dl_models/hwm14/hwm123114.bin'
-], install_dir : 'pyglow/hwm14_data/')
+], install_dir : get_option('datadir') / 'pyglow/hwm14_data/')
 
 install_data([
-  'src/pyglow/models/dl_models/iri12/apf107.dat',
-  'src/pyglow/models/dl_models/iri12/ccir11.asc',
-  'src/pyglow/models/dl_models/iri12/ccir12.asc',
-  ...
-  'src/pyglow/models/dl_models/iri12/ursi22.asc'
-], install_dir : 'pyglow/iri12_data/')
+               'src/pyglow/models/dl_models/iri12/apf107.dat',
+               'src/pyglow/models/dl_models/iri12/ccir11.asc',
+               'src/pyglow/models/dl_models/iri12/ccir12.asc',
+               'src/pyglow/models/dl_models/iri12/ccir13.asc',
+               'src/pyglow/models/dl_models/iri12/ccir14.asc',
+               'src/pyglow/models/dl_models/iri12/ccir15.asc',
+               'src/pyglow/models/dl_models/iri12/ccir16.asc',
+               'src/pyglow/models/dl_models/iri12/ccir17.asc',
+               'src/pyglow/models/dl_models/iri12/ccir18.asc',
+               'src/pyglow/models/dl_models/iri12/ccir19.asc',
+               'src/pyglow/models/dl_models/iri12/ccir20.asc',
+               'src/pyglow/models/dl_models/iri12/ccir21.asc',
+               'src/pyglow/models/dl_models/iri12/ccir22.asc',
+               'src/pyglow/models/dl_models/iri12/dgrf1945.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1950.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1955.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1960.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1965.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1970.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1975.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1980.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1985.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1990.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf1995.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf2000.dat',
+               'src/pyglow/models/dl_models/iri12/dgrf2005.dat',
+               'src/pyglow/models/dl_models/iri12/ig_rz.dat',
+               'src/pyglow/models/dl_models/iri12/igrf2010.dat',
+               'src/pyglow/models/dl_models/iri12/igrf2010s.dat',
+               'src/pyglow/models/dl_models/iri12/ursi11.asc',
+               'src/pyglow/models/dl_models/iri12/ursi12.asc',
+               'src/pyglow/models/dl_models/iri12/ursi13.asc',
+               'src/pyglow/models/dl_models/iri12/ursi14.asc',
+               'src/pyglow/models/dl_models/iri12/ursi15.asc',
+               'src/pyglow/models/dl_models/iri12/ursi16.asc',
+               'src/pyglow/models/dl_models/iri12/ursi17.asc',
+               'src/pyglow/models/dl_models/iri12/ursi18.asc',
+               'src/pyglow/models/dl_models/iri12/ursi19.asc',
+               'src/pyglow/models/dl_models/iri12/ursi20.asc',
+               'src/pyglow/models/dl_models/iri12/ursi21.asc',
+               'src/pyglow/models/dl_models/iri12/ursi22.asc',
+], install_dir : get_option('datadir') / 'pyglow/iri12_data/')
 
 install_data([
-  'src/pyglow/models/dl_models/iri16/apf107.dat',
-  'src/pyglow/models/dl_models/iri16/ccir11.asc',
-  ...
-  'src/pyglow/models/dl_models/iri16/ursi22.asc'
-], install_dir : 'pyglow/iri16_data/')
+               'src/pyglow/models/dl_models/iri16/apf107.dat',
+               'src/pyglow/models/dl_models/iri16/ccir11.asc',
+               'src/pyglow/models/dl_models/iri16/ccir12.asc',
+               'src/pyglow/models/dl_models/iri16/ccir13.asc',
+               'src/pyglow/models/dl_models/iri16/ccir14.asc',
+               'src/pyglow/models/dl_models/iri16/ccir15.asc',
+               'src/pyglow/models/dl_models/iri16/ccir16.asc',
+               'src/pyglow/models/dl_models/iri16/ccir17.asc',
+               'src/pyglow/models/dl_models/iri16/ccir18.asc',
+               'src/pyglow/models/dl_models/iri16/ccir19.asc',
+               'src/pyglow/models/dl_models/iri16/ccir20.asc',
+               'src/pyglow/models/dl_models/iri16/ccir21.asc',
+               'src/pyglow/models/dl_models/iri16/ccir22.asc',
+               'src/pyglow/models/dl_models/iri16/dgrf1945.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1950.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1955.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1960.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1965.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1970.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1975.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1980.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1985.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1990.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf1995.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf2000.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf2005.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf2010.dat',
+               'src/pyglow/models/dl_models/iri16/dgrf2015.dat',
+               'src/pyglow/models/dl_models/iri16/ig_rz.dat',
+               'src/pyglow/models/dl_models/iri16/igrf2020.dat',
+               'src/pyglow/models/dl_models/iri16/igrf2020s.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat11.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat12.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat13.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat14.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat15.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat16.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat17.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat18.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat19.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat20.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat21.dat',
+               'src/pyglow/models/dl_models/iri16/mcsat22.dat',
+               'src/pyglow/models/dl_models/iri16/ursi11.asc',
+               'src/pyglow/models/dl_models/iri16/ursi12.asc',
+               'src/pyglow/models/dl_models/iri16/ursi13.asc',
+               'src/pyglow/models/dl_models/iri16/ursi14.asc',
+               'src/pyglow/models/dl_models/iri16/ursi15.asc',
+               'src/pyglow/models/dl_models/iri16/ursi16.asc',
+               'src/pyglow/models/dl_models/iri16/ursi17.asc',
+               'src/pyglow/models/dl_models/iri16/ursi18.asc',
+               'src/pyglow/models/dl_models/iri16/ursi19.asc',
+               'src/pyglow/models/dl_models/iri16/ursi20.asc',
+               'src/pyglow/models/dl_models/iri16/ursi21.asc',
+               'src/pyglow/models/dl_models/iri16/ursi22.asc',
+], install_dir : get_option('datadir') / 'pyglow/iri16_data/')
 
 install_data([
-  'src/pyglow/models/dl_models/iri20/apf107.dat',
-  ...
-  'src/pyglow/models/dl_models/iri20/ursi22.asc'
-], install_dir : 'pyglow/iri20_data/')
+               'src/pyglow/models/dl_models/iri20/apf107.dat',
+               'src/pyglow/models/dl_models/iri20/ccir11.asc',
+               'src/pyglow/models/dl_models/iri20/ccir12.asc',
+               'src/pyglow/models/dl_models/iri20/ccir13.asc',
+               'src/pyglow/models/dl_models/iri20/ccir14.asc',
+               'src/pyglow/models/dl_models/iri20/ccir15.asc',
+               'src/pyglow/models/dl_models/iri20/ccir16.asc',
+               'src/pyglow/models/dl_models/iri20/ccir17.asc',
+               'src/pyglow/models/dl_models/iri20/ccir18.asc',
+               'src/pyglow/models/dl_models/iri20/ccir19.asc',
+               'src/pyglow/models/dl_models/iri20/ccir20.asc',
+               'src/pyglow/models/dl_models/iri20/ccir21.asc',
+               'src/pyglow/models/dl_models/iri20/ccir22.asc',
+               'src/pyglow/models/dl_models/iri20/dgrf1945.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1950.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1955.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1960.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1965.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1970.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1975.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1980.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1985.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1990.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf1995.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf2000.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf2005.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf2010.dat',
+               'src/pyglow/models/dl_models/iri20/dgrf2015.dat',
+               'src/pyglow/models/dl_models/iri20/ig_rz.dat',
+               'src/pyglow/models/dl_models/iri20/igrf2020.dat',
+               'src/pyglow/models/dl_models/iri20/igrf2020s.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat11.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat12.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat13.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat14.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat15.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat16.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat17.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat18.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat19.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat20.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat21.dat',
+               'src/pyglow/models/dl_models/iri20/mcsat22.dat',
+               'src/pyglow/models/dl_models/iri20/ursi11.asc',
+               'src/pyglow/models/dl_models/iri20/ursi12.asc',
+               'src/pyglow/models/dl_models/iri20/ursi13.asc',
+               'src/pyglow/models/dl_models/iri20/ursi14.asc',
+               'src/pyglow/models/dl_models/iri20/ursi15.asc',
+               'src/pyglow/models/dl_models/iri20/ursi16.asc',
+               'src/pyglow/models/dl_models/iri20/ursi17.asc',
+               'src/pyglow/models/dl_models/iri20/ursi18.asc',
+               'src/pyglow/models/dl_models/iri20/ursi19.asc',
+               'src/pyglow/models/dl_models/iri20/ursi20.asc',
+               'src/pyglow/models/dl_models/iri20/ursi21.asc',
+               'src/pyglow/models/dl_models/iri20/ursi22.asc',
+], install_dir : get_option('datadir') / 'pyglow/iri20_data/')
 
-install_data(glob('src/pyglow/kpap/*'), install_dir : 'pyglow/kpap/')
-install_data(glob('src/pyglow/dst/*'), install_dir : 'pyglow/dst/')
-install_data(glob('src/pyglow/ae/*'), install_dir : 'pyglow/ae/')
+install_subdir('src/pyglow/kpap/', install_dir : get_option('datadir') / 'pyglow/kpap/')
+install_subdir('src/pyglow/dst/', install_dir : get_option('datadir') / 'pyglow/dst/')
+install_subdir('src/pyglow/ae/', install_dir : get_option('datadir') / 'pyglow/ae/')

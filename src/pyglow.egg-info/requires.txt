@@ -1,5 +1,8 @@
-future
 numpy
-python-dateutil
-pytest
-coverage
+scipy
+matplotlib
+future
+charset_normalizer
+pandas
+chardet
+meson

@@ -1,0 +1,23 @@
+Processing /home/schreit/pyglow
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Requirement already satisfied: numpy in /home/schreit/miniforge3/envs/pyglow_test/lib/python3.12/site-packages (from pyglow==0.1.0) (2.2.0)
+Requirement already satisfied: chardet in /home/schreit/miniforge3/envs/pyglow_test/lib/python3.12/site-packages (from pyglow==0.1.0) (5.2.0)
+Building wheels for collected packages: pyglow
+  Building wheel for pyglow (pyproject.toml): started
+  Building wheel for pyglow (pyproject.toml): finished with status 'done'
+  Created wheel for pyglow: filename=pyglow-0.1.0-cp312-cp312-linux_x86_64.whl size=22231508 sha256=9ad728b7c56cd2189fb878c37afd4f130741d30f3db46a69459c8e40b08a5bc9
+  Stored in directory: /tmp/pip-ephem-wheel-cache-b_195kkt/wheels/47/c3/1b/09e2a5473c524d502a5738c168434437a4071b8c06f81946e3
+Successfully built pyglow
+Installing collected packages: pyglow
+  Attempting uninstall: pyglow
+    Found existing installation: pyglow 0.1.0
+    Uninstalling pyglow-0.1.0:
+      Successfully uninstalled pyglow-0.1.0
+Successfully installed pyglow-0.1.0

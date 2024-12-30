@@ -1,7 +1,7 @@
 [build-system]
 requires = [
     "scikit-build-core",
-    "numpy>=1.21",
+    "numpy",
     "chardet",
 ]
 build-backend = "scikit_build_core.build"
@@ -13,8 +13,7 @@ description = "Upper atmosphere climatological models in Python"
 authors = [
     { name="Timothy M. Duly", email="timduly4@gmail.com" }
 ]
-dependencies = ["numpy>=1.21","chardet"]
+dependencies = ["numpy","chardet"]
 
 [tool.scikit-build]
-ninja.version = ">=1.10"
-cmake.version = ">=3.17.2"
+cmake.version = "CMakeLists.txt"

@@ -1,7 +1,7 @@
 import numpy as np
 
-from igrf11py import igrf11syn as igrf11
-from igrf12py import igrf12syn as igrf12
+from igrf11py.igrf11py import igrf11syn as igrf11
+from igrf12py.igrf12py import igrf12syn as igrf12
 from .constants import nan
 
 

@@ -1,1 +1,8 @@
-numpy>=1.21
+numpy
+scipy
+matplotlib
+future
+charset_normalizer
+pandas
+chardet
+meson

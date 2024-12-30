@@ -2,11 +2,12 @@ Metadata-Version: 2.1
 Name: pyglow
 Version: 0.1.0
 Summary: Upper atmosphere climatological models in Python
-Home-page: https://github.com/lschreit/pyglow
-Author: Timothy M. Duly
-Author-email: timduly4@gmail.com
-Requires-Dist: future
+Author-email: "Timothy M. Duly" <timduly4@gmail.com>
 Requires-Dist: numpy
-Requires-Dist: python-dateutil
-Requires-Dist: pytest
-Requires-Dist: coverage
+Requires-Dist: scipy
+Requires-Dist: matplotlib
+Requires-Dist: future
+Requires-Dist: charset_normalizer
+Requires-Dist: pandas
+Requires-Dist: chardet
+Requires-Dist: meson

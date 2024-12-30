@@ -1,10 +1,1 @@
-hwm07py
-hwm14py
-hwm93py
-igrf11py
-igrf12py
-iri12py
-iri16py
-iri20py
-msis00py
 pyglow
